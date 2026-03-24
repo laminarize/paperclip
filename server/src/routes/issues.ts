@@ -166,14 +166,16 @@ export function issueRoutes(db: Db, storage: StorageService) {
     companyId: string,
     permission: "assign" | "comment",
   ) {
-    const grants = await agentAclSvc.listGrants(companyId, {
-      granteeId: granteeAgentId,
-      agentId: targetAgentId,
-      permission,
-    });
+    const [grants, defaults] = await Promise.all([
+      agentAclSvc.listGrants(companyId, {
+        granteeId: granteeAgentId,
+        agentId: targetAgentId,
+        permission,
+      }),
+      agentAclSvc.getDefaults(companyId),
+    ]);
     if (grants.length > 0) return;
 
-    const defaults = await agentAclSvc.getDefaults(companyId);
     const defaultAllowed = permission === "assign" ? defaults?.assignDefault : defaults?.commentDefault;
     if (defaultAllowed) return;
 

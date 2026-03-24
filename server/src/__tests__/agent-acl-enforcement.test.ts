@@ -154,8 +154,11 @@ describe("ACL enforcement — task creation", () => {
     expect(res.status).toBe(201);
   });
 
-  it("allows CEO agent to create assigned issue without explicit grant", async () => {
+  it("allows CEO agent to create assigned issue via explicit grant", async () => {
     mockAgentService.getById.mockResolvedValue({ id: ceoAgentId, companyId, role: "ceo" });
+    mockAgentAclService.listGrants.mockResolvedValue([
+      { id: "grant-1", companyId, granteeId: ceoAgentId, agentId: agentB, permission: "assign" },
+    ]);
     mockIssueService.create.mockResolvedValue({
       id: issueId,
       companyId,
@@ -172,7 +175,8 @@ describe("ACL enforcement — task creation", () => {
     expect(res.status).toBe(201);
   });
 
-  it("allows board user to create assigned issue without any grants", async () => {
+  it("allows board user with tasks:assign grant to create assigned issue", async () => {
+    mockAccessService.canUser.mockResolvedValue(true);
     mockIssueService.create.mockResolvedValue({
       id: issueId,
       companyId,

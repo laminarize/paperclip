@@ -1342,6 +1342,44 @@ export function issueRoutes(db: Db, storage: StorageService) {
         }
       }
 
+      // Wake parent-task assignee when a subtask reaches a terminal status.
+      const statusBecameTerminal =
+        (issue.status === "done" || issue.status === "cancelled") &&
+        existing.status !== issue.status;
+      if (statusBecameTerminal && issue.parentId) {
+        try {
+          const parentIssue = await svc.getById(issue.parentId);
+          if (
+            parentIssue &&
+            parentIssue.assigneeAgentId &&
+            !wakeups.has(parentIssue.assigneeAgentId) &&
+            parentIssue.assigneeAgentId !== actor.actorId
+          ) {
+            wakeups.set(parentIssue.assigneeAgentId, {
+              source: "automation",
+              triggerDetail: "system",
+              reason: "subtask_status_changed",
+              payload: {
+                issueId: parentIssue.id,
+                childIssueId: issue.id,
+                childStatus: issue.status,
+                mutation: "update",
+              },
+              requestedByActorType: actor.actorType,
+              requestedByActorId: actor.actorId,
+              contextSnapshot: {
+                issueId: parentIssue.id,
+                source: "subtask.status_change",
+                childIssueId: issue.id,
+                childStatus: issue.status,
+              },
+            });
+          }
+        } catch (err) {
+          logger.warn({ err, issueId: issue.id, parentId: issue.parentId }, "failed to resolve parent issue for subtask wakeup");
+        }
+      }
+
       for (const [agentId, wakeup] of wakeups.entries()) {
         heartbeat
           .wakeup(agentId, wakeup)

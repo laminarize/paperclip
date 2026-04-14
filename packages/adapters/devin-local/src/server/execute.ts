@@ -33,12 +33,13 @@ async function ensureDevinSkillsInjected(
   config: Record<string, unknown>,
   skillsEntries: Array<{ key: string; runtimeName: string; source: string }>,
   desiredSkillNames?: string[],
+  workspaceCwd?: string,
 ): Promise<void> {
   const desiredSet = new Set(desiredSkillNames ?? skillsEntries.map((entry) => entry.key));
   const selectedEntries = skillsEntries.filter((entry) => desiredSet.has(entry.key));
   if (selectedEntries.length === 0) return;
 
-  const skillsHome = resolveDevinSkillsHome(config);
+  const skillsHome = resolveDevinSkillsHome(config, workspaceCwd);
   try {
     await fs.mkdir(skillsHome, { recursive: true });
   } catch (err) {
@@ -160,7 +161,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const devinSkillEntries = await readPaperclipRuntimeSkillEntries(config, __moduleDir);
   const desiredDevinSkillNames = resolvePaperclipDesiredSkillNames(config, devinSkillEntries);
-  await ensureDevinSkillsInjected(onLog, config, devinSkillEntries, desiredDevinSkillNames);
+  await ensureDevinSkillsInjected(onLog, config, devinSkillEntries, desiredDevinSkillNames, cwd);
 
   const envConfig = parseObject(config.env);
   const hasExplicitApiKey =

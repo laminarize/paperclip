@@ -12,7 +12,6 @@ import type {
   CompanyPortabilityPreviewResult,
   CompanyPortabilityImportResult,
 } from "@paperclipai/shared";
-import { getTelemetryClient, trackCompanyImported } from "../../telemetry.js";
 import { ApiRequestError } from "../../client/http.js";
 import { openUrl } from "../../client/board-auth.js";
 import { binaryContentTypeByExtension, readZipArchive } from "./zip.js";
@@ -1440,12 +1439,6 @@ export function registerCompanyCommands(program: Command): void {
           });
           if (!imported) {
             throw new Error("Import request returned no data.");
-          }
-          const tc = getTelemetryClient();
-          if (tc) {
-            const isPrivate = sourcePayload.type !== "github";
-            const sourceRef = sourcePayload.type === "github" ? sourcePayload.url : from;
-            trackCompanyImported(tc, { sourceType: sourcePayload.type, sourceRef, isPrivate });
           }
           let companyUrl: string | undefined;
           if (!ctx.json) {

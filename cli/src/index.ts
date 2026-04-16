@@ -19,7 +19,6 @@ import { registerRoutineCommands } from "./commands/routines.js";
 import { registerFeedbackCommands } from "./commands/client/feedback.js";
 import { applyDataDirOverride, type DataDirOptionLike } from "./config/data-dir.js";
 import { loadPaperclipEnvFile } from "./config/env.js";
-import { initTelemetryFromConfigFile, flushTelemetry } from "./telemetry.js";
 import { registerWorktreeCommands } from "./commands/worktree.js";
 import { registerPluginCommands } from "./commands/client/plugin.js";
 import { registerClientAuthCommands } from "./commands/client/auth.js";
@@ -42,7 +41,6 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
     hasContextOption: optionNames.has("context"),
   });
   loadPaperclipEnvFile(options.config);
-  initTelemetryFromConfigFile(options.config);
 });
 
 program
@@ -168,8 +166,6 @@ async function main(): Promise<void> {
   } catch (err) {
     failed = true;
     console.error(err instanceof Error ? err.message : String(err));
-  } finally {
-    await flushTelemetry();
   }
 
   if (failed) {
